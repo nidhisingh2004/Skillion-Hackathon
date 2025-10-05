@@ -21,6 +21,13 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Handle port conflicts gracefully
+process.on('EADDRINUSE', () => {
+  console.error(`✗ Port ${PORT} is already in use`);
+  console.log('Please stop other servers or use a different PORT');
+  process.exit(1);
+});
+
 // Security middleware
 app.use(helmet());
 app.use(mongoSanitize());
@@ -68,7 +75,10 @@ app.use(errorHandler);
 // Connect to MongoDB and start server
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/resume-rag';
+    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/resumerag';
+    console.log('Connecting to MongoDB...');
+    console.log('MongoDB URI:', mongoURI.replace(/\/\/.*@/, '//***:***@')); // Hide credentials in logs
+    
     await mongoose.connect(mongoURI);
     console.log('✓ MongoDB connected successfully');
 
@@ -78,6 +88,7 @@ const connectDB = async () => {
     });
   } catch (error) {
     console.error('✗ MongoDB connection error:', error);
+    console.error('Please check your MONGODB_URI environment variable');
     process.exit(1);
   }
 };
